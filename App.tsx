@@ -61,7 +61,6 @@ function Section({children, title}: SectionProps): JSX.Element {
       try {
         var oldValue: any = await AsyncStorage.getItem('@geoLoc')
         oldValue = JSON.parse(oldValue)
-        console.log("OLD -> ", [...oldValue, value])
         await AsyncStorage.setItem('@geoLoc', JSON.stringify([...oldValue, value]))
       } catch (e) {
         // saving error
