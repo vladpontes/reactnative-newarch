@@ -6,9 +6,11 @@
  */
 
 import BackgroundService from 'react-native-background-actions';
-import Geolocation from 'react-native-geolocation-service';
+// import Geolocation from 'react-native-geolocation-service';
+import Geolocation from '@react-native-community/geolocation'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { setAccessToken } from './src/services/storage';
+import { insertGeoLoc } from './src/services/api';
 import React, { useEffect, useState } from 'react';
 import type {PropsWithChildren} from 'react';
 import {
@@ -40,10 +42,10 @@ type SectionProps = PropsWithChildren<{
 function Section({children, title}: SectionProps): JSX.Element {
   // AsyncStorage.clear()
   useEffect(()=>{
-    // BackgroundTask()
-    // console.log("STARTING.... ", BackgroundTask)
-    // BackgroundTask.startBackgroundTask();
-    // Geolocation.
+    const startThis = async() => {
+      await setAccessToken()
+    }
+    startThis()
     const getDataGeoLoc = async () => {
       try {
         const value = await AsyncStorage.getItem('@geoLoc')
@@ -57,10 +59,16 @@ function Section({children, title}: SectionProps): JSX.Element {
     }
     
 
-    const storeDataGeoLoc = async (value: any) => {
+    const saveDataGeoLoc = async (value: any) => {
+      console.log("RODANDO...")
       try {
         var oldValue: any = await AsyncStorage.getItem('@geoLoc')
         oldValue = JSON.parse(oldValue)
+        console.log("LENGHT ", oldValue)
+        if (oldValue.length > 10){
+          await AsyncStorage.clear()
+          return
+        }
         await AsyncStorage.setItem('@geoLoc', JSON.stringify([...oldValue, value]))
       } catch (e) {
         // saving error
@@ -69,36 +77,16 @@ function Section({children, title}: SectionProps): JSX.Element {
     
     const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time * 1000));
     const StartTask = async () => {
-
-  
-    // You can do anything in your task such as network requests, timers and so on,
-    // as long as it doesn't touch UI. Once your task completes (i.e. the promise is resolved),
-    // React Native will go into "paused" mode (unless there are other tasks running,
-    // or there is a foreground app).
     const veryIntensiveTask = async (taskDataArguments: any) => {
-        // Example of an infinite loop task
         const { delay } = taskDataArguments;
         await new Promise( async (resolve) => {
             for (let i = 0; BackgroundService.isRunning(); i++) {
-                console.log(i);
-                await Geolocation.getCurrentPosition(async(info) => {console.log(info); await storeDataGeoLoc(JSON.stringify(info))});
-                console.log("GET DATA -> ", await getDataGeoLoc())
-                // Geolocation.
-                // Geolocation.getCurrentPosition(
-                //     (position) => {
-                //       console.log(position);
-                //     },
-                //     (error) => {
-                //       // See error code charts below.
-                //       console.log(error.code, error.message);
-                //     },
-                //     { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-                // );
-                // Geolocation.watchPosition((e)=> {console.log(e)}, (e)=>{console.log("Error: ", e)}, {
-                //   showsBackgroundLocationIndicator: true,
-                //   showLocationDialog: true
-                // })
-                await sleep(delay);
+              await sleep(delay);
+              console.log(i);
+              // Geolocation.getCurrentPosition(async(info) => {console.log(info)});
+              // await Geolocation.getCurrentPosition(async(info) => {console.log(info); await saveDataGeoLoc(JSON.stringify(info))});
+              // console.log("GET DATA -> ", await getDataGeoLoc())
+              Geolocation.getCurrentPosition(async(info)=>{console.log(info);insertGeoLoc(info)}, (e)=>{console.log(e)}, {timeout: 20000});
             }
         });
       };
@@ -124,38 +112,10 @@ function Section({children, title}: SectionProps): JSX.Element {
       // iOS will also run everything here in the background until .stop() is called
       // await BackgroundService.stop();
     }
-
-    // const showLoc = async(data: any) => {
-    //   console.log(data)
-    // } 
-
-    // const errorShow = async(data: any) => {
-    //   console.log("ERROR: ", data)
-    // }
-
-    // const InitGetGeo = async() => {
-    //   // if(started){
-    //   //   return
-    //   // }
-    //   // setStarted(true)
-    //   // await Geolocation.watchPosition((e)=> {console.log(e)}, errorShow, {
-    //   //   showsBackgroundLocationIndicator: true,
-    //   //   showLocationDialog: true,
-    //   //   forceRequestLocation: true,
-    //   // })
-    //   // while(true){
-    //   //   console.log("GET GEO...")
-    //   //   await sleep(5)
-    //   // }
-    // }
-    // InitGetGeo()
+    
     StartTask()
-    // if (!started){
-    //   setStarted(true)
-    //   InitGetGeo()
-    // }
-
-   }, [])
+  
+  }, [])
 
   const isDarkMode = useColorScheme() === 'dark';
   return (
@@ -180,28 +140,7 @@ function Section({children, title}: SectionProps): JSX.Element {
       </Text>
     </View>
   );
-  // return (
-  //   <View style={styles.sectionContainer}>
-  //     <Text
-  //       style={[
-  //         styles.sectionTitle,
-  //         {
-  //           color: isDarkMode ? Colors.white : Colors.black,
-  //         },
-  //       ]}>
-  //       {title}
-  //     </Text>
-  //     <Text
-  //       style={[
-  //         styles.sectionDescription,
-  //         {
-  //           color: isDarkMode ? Colors.light : Colors.dark,
-  //         },
-  //       ]}>
-  //       {children}
-  //     </Text>
-  //   </View>
-  // );
+ 
 }
 
 function App(): JSX.Element {
