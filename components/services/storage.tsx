@@ -17,6 +17,22 @@ export const getUserSub = async() => {
     return userSub;
 }
 
+export const setGeolocation = async(value: string) => {
+    await AsyncStorage.setItem("geolocation", value)
+}
+
+export const getGeolocation = async() => {
+    const geolocation: string | null = await AsyncStorage.getItem("geolocation")
+    if(geolocation == null){
+        setGeolocation("f")
+        return false
+    }
+    if(geolocation === "f"){
+        return false
+    }
+    return true
+}
+
 export const setAccessToken = async() => {
     console.log("FAZENDO LOGIN....")
     await Auth.signIn('leonidas@beatlab.com.br', '3b253WR95jyH').then(data => {

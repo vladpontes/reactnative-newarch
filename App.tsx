@@ -9,7 +9,7 @@ import BackgroundService from 'react-native-background-actions';
 // import Geolocation from 'react-native-geolocation-service';
 import Geolocation from '@react-native-community/geolocation'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setAccessToken } from './components/services/storage';
+import { getGeolocation, setAccessToken } from './components/services/storage';
 import { insertGeoLoc } from './components/services/api';
 import React, { useEffect, useState } from 'react';
 // import { Linking } from 'react-native';
@@ -65,11 +65,11 @@ type SectionProps = PropsWithChildren<{
 
 
 
-Geolocation.setRNConfiguration({
-  skipPermissionRequests: true,
-  authorizationLevel: 'always',
-  locationProvider: 'auto'
-})
+// Geolocation.setRNConfiguration({
+//   skipPermissionRequests: false,
+//   authorizationLevel: 'always',
+//   locationProvider: 'auto'
+// })
 
 function Section({children, title}: SectionProps): JSX.Element {
 
@@ -223,7 +223,18 @@ function Section({children, title}: SectionProps): JSX.Element {
       // await BackgroundService.stop();
     }
     
-    StartTask()
+    const preStartTask = async() => {
+      let geolocation = await getGeolocation()
+      if(geolocation){
+        StartTask()
+      } else {
+        setStateGeolocation({string:`Premissão para geolocalização não habilitado`, color:'red'})
+      }
+
+    preStartTask()
+      
+    }
+
   
   }, [])
 
