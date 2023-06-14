@@ -24,7 +24,7 @@ export const setGeolocation = async(value: string) => {
 export const getGeolocation = async() => {
     const geolocation: string | null = await AsyncStorage.getItem("geolocation")
     if(geolocation == null){
-        setGeolocation("f")
+        await setGeolocation("f")
         return false
     }
     if(geolocation === "f"){

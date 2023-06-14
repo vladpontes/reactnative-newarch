@@ -9,7 +9,7 @@ import BackgroundService from 'react-native-background-actions';
 // import Geolocation from 'react-native-geolocation-service';
 import Geolocation from '@react-native-community/geolocation'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getGeolocation, setAccessToken } from './components/services/storage';
+import { getGeolocation, setAccessToken, setGeolocation } from './components/services/storage';
 import { insertGeoLoc } from './components/services/api';
 import React, { useEffect, useState } from 'react';
 // import { Linking } from 'react-native';
@@ -128,7 +128,7 @@ function Section({children, title}: SectionProps): JSX.Element {
 
     const questionLocation = async() => {
       const granted = await PermissionsAndroid.check( PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION );
-      return !granted
+      return granted
       // if (granted) {
       //   console.log( "You can use the ACCESS_FINE_LOCATION" )
       // } 
@@ -224,17 +224,36 @@ function Section({children, title}: SectionProps): JSX.Element {
     }
     
     const preStartTask = async() => {
+      console.log("AQUI")
       let geolocation = await getGeolocation()
+      let questionloc = await questionLocation()
+      console.log("GEOLOCATION: ", geolocation)
+      console.log("GEOLOCATIONLOC: ", questionloc)
       if(geolocation){
         StartTask()
       } else {
         setStateGeolocation({string:`Premissão para geolocalização não habilitado`, color:'red'})
+        if (questionloc){
+          setGeolocation("t")
+          StartTask()
+          // break
+        }
+        while(!questionloc){
+          console.log("verificando....")
+          questionloc = await questionLocation()
+          if (questionloc){
+            setGeolocation("t")
+            StartTask()
+            break
+          }
+          await sleep(3)
+        }
       }
 
-    preStartTask()
       
     }
-
+    
+    preStartTask()
   
   }, [])
 
