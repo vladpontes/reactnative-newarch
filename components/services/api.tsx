@@ -1,10 +1,29 @@
-import { getAccessToken, getUserSub } from "./storage";
+import { getAccessToken, getUserSub, setAccessToken } from "./storage";
 
 export const listVehicles = async() => {
     await fetch("https://5efkikbzmjd7tnwtyrqiveqgty.appsync-api.us-east-1.amazonaws.com/graphql",{
         method:"POST",
 
     })
+}
+
+const requestApi = async(query: any) => {
+    let accessToken = await getAccessToken()
+    await fetch('https://5efkikbzmjd7tnwtyrqiveqgty.appsync-api.us-east-1.amazonaws.com/graphql', {
+        method:"POST",
+        headers: {
+            "Authorization": accessToken,
+            "Content-Type": "application/json, charset=UTF-8"
+        } as any,
+        body: JSON.stringify({"query":query})
+    }).then(res=>{
+        // console.log("RES STATUS: ", res.status)
+        return res.json()
+    }).then(json=>{
+        console.log("RESPONSE: ",json)
+    }).catch(e=>{
+        console.log("ERROR: ", e)
+    });
 }
 
 export const insertGeoLoc = async(data: any) => {
@@ -41,6 +60,13 @@ export const insertGeoLoc = async(data: any) => {
         return res.json()
     }).then(json=>{
         console.log("RESPONSE: ",json)
+        try {
+            if(json?.errors[0]?.errorType === "UnauthorizedException"){
+                console.log("REFAZER LOGIN....");
+                setAccessToken()
+            }
+
+        }catch(e){}
     }).catch(e=>{
         console.log("ERROR: ", e)
     });
