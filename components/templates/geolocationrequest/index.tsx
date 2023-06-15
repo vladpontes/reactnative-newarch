@@ -9,7 +9,7 @@ Permissões -> Localização e marque a opção "Permitir o tempo todo"`
     return (
         <View> 
             <Text style={styles.baseText}>
-                User localização
+                Usar localização
             </Text>
             <Text style={styles.innerText}>
                 {message}
