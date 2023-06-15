@@ -22,8 +22,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacityComponent,
-  // Touchable,
+  TouchableOpacity,
   Button,
   Linking,
   Alert,
@@ -42,6 +41,8 @@ import {
 // import { NativeModules } from 'react-native';
 // import { BackHandler, DeviceEventEmitter } from 'react-native';
 // import backgroundServer from 'react-native-background-actions';
+import RNAndroidLocationEnabler from 'react-native-android-location-enabler';
+
 import GeolocationRequest from './components/templates/geolocationrequest';
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -63,7 +64,9 @@ type SectionProps = PropsWithChildren<{
 
 
 
-
+Geolocation.setRNConfiguration({
+  skipPermissionRequests: true
+})
 
 // Geolocation.setRNConfiguration({
 //   skipPermissionRequests: false,
@@ -74,6 +77,7 @@ type SectionProps = PropsWithChildren<{
 function Section({children, title}: SectionProps): JSX.Element {
 
   const [stateGeolocation, setStateGeolocation] = useState({string:'Iniciando rastreamento...',color: 'gray'})
+  const [requestInf, setRequestInfo] = useState('')
   // const [msg, setMsg] = useState('não tocou..')
 
   useEffect(()=>{
@@ -82,8 +86,31 @@ function Section({children, title}: SectionProps): JSX.Element {
     }
   }, [])
   // AsyncStorage.clear()
+
   useEffect(()=>{
-    Geolocation.requestAuthorization();
+    const activateGps = async()=>{
+      RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({
+        interval: 10000,
+        fastInterval: 5000,
+      })
+        .then((data) => {
+          // The user has accepted to enable the location services
+          // data can be :
+          //  - "already-enabled" if the location services has been already enabled
+          //  - "enabled" if user has clicked on OK button in the popup
+        })
+        .catch((err) => {
+          // The user has not accepted to enable the location services or something went wrong during the process
+          // "err" : { "code" : "ERR00|ERR01|ERR02|ERR03", "message" : "message"}
+          // codes :
+          //  - ERR00 : The user has clicked on Cancel button in the popup
+          //  - ERR01 : If the Settings change are unavailable
+          //  - ERR02 : If the popup has failed to open
+          //  - ERR03 : Internal error
+        });
+    }
+    activateGps()
+    // Geolocation.requestAuthorization();
 
     const startThis = async() => {
       await setAccessToken()
@@ -173,7 +200,7 @@ function Section({children, title}: SectionProps): JSX.Element {
               // console.log("GET DATA -> ", await getDataGeoLoc())
               Geolocation.getCurrentPosition(async(info)=>{
                 console.log(info)
-                insertGeoLoc(info)
+                insertGeoLoc(info, setRequestInfo)
                 setStateGeolocation({string:'Monitoramento GPS ativado', color:'green'})
                 await BackgroundService.updateNotification({taskDesc: `Monitoramento GPS ativado`, color: "green"}); // Only Android, iOS will ignore this call
 
@@ -273,6 +300,15 @@ function Section({children, title}: SectionProps): JSX.Element {
         {stateGeolocation.string}
       </Text>
       {stateGeolocation.color == "red" && <GeolocationRequest/>}
+      <Text>
+        {`\nSTATUS REQUEST: \n`}{requestInf}
+      </Text>
+
+      <TouchableOpacity style={styles.button} onPress={()=>  Linking.openSettings()}>
+          <Text style={{color:'white', fontWeight: 'bold'}}>
+              Configurações do app
+          </Text>
+      </TouchableOpacity>
       {/* <Button title="Clique aqui" onPress={()=>  Linking.openSettings()}/> */}
       {/* </Button> */}
       <Text
@@ -332,6 +368,15 @@ const styles = StyleSheet.create({
   highlight: {
     fontWeight: '700',
   },
+  button: {
+    backgroundColor: "red",
+    marginTop: 15,
+    padding: 10,
+    borderRadius: 16,
+    fontSize:50,
+    textAlign: 'center',
+    alignItems: 'center'
+}
 });
 
 export default App;

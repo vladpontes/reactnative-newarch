@@ -1,7 +1,9 @@
 import { getAccessToken, getUserSub, setAccessToken } from "./storage";
 
+const graphqlEndPoint = "https://5efkikbzmjd7tnwtyrqiveqgty.appsync-api.us-east-1.amazonaws.com/graphql"
+
 export const listVehicles = async() => {
-    await fetch("https://5efkikbzmjd7tnwtyrqiveqgty.appsync-api.us-east-1.amazonaws.com/graphql",{
+    await fetch(graphqlEndPoint,{
         method:"POST",
 
     })
@@ -9,7 +11,7 @@ export const listVehicles = async() => {
 
 const requestApi = async(query: any) => {
     let accessToken = await getAccessToken()
-    await fetch('https://5efkikbzmjd7tnwtyrqiveqgty.appsync-api.us-east-1.amazonaws.com/graphql', {
+    await fetch(graphqlEndPoint, {
         method:"POST",
         headers: {
             "Authorization": accessToken,
@@ -26,7 +28,7 @@ const requestApi = async(query: any) => {
     });
 }
 
-export const insertGeoLoc = async(data: any) => {
+export const insertGeoLoc = async(data: any, setInfo: any) => {
     let accessToken = await getAccessToken()
     let userSub = await getUserSub()
     console.log("USERSUB: ", userSub)
@@ -37,7 +39,7 @@ export const insertGeoLoc = async(data: any) => {
         return `mutation {createGeolocation(input:{
             usersub:"${userSub}",
             vehicleid:"c45c8e53-e6d9-41e1-ba2d-47a231192abf",
-            accuracy:${data.coords.accuracy},
+            accuracy:${Math.floor(data.coords.accuracy)},
             altitude:${data.coords.altitude},
             latitude:${data.coords.latitude},
             longitude:${data.coords.longitude},
@@ -47,7 +49,7 @@ export const insertGeoLoc = async(data: any) => {
         }){id}}`
     }
     // console.log("SENDING: ", query())
-    await fetch('https://5efkikbzmjd7tnwtyrqiveqgty.appsync-api.us-east-1.amazonaws.com/graphql', {
+    await fetch(graphqlEndPoint, {
         method:"POST",
         headers: {
             "Authorization": accessToken,
@@ -60,14 +62,17 @@ export const insertGeoLoc = async(data: any) => {
         return res.json()
     }).then(json=>{
         console.log("RESPONSE: ",json)
+        setInfo("RESPONSE: " + JSON.stringify(json))
         try {
             if(json?.errors[0]?.errorType === "UnauthorizedException"){
                 console.log("REFAZER LOGIN....");
+                setInfo("REFAZER LOGIN....")
                 setAccessToken()
             }
-
-        }catch(e){}
+        }catch(e){
+        }
     }).catch(e=>{
+        setInfo("ERRO: " + e)
         console.log("ERROR: ", e)
     });
 }
