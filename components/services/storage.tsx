@@ -17,6 +17,28 @@ export const getUserSub = async() => {
     return userSub;
 }
 
+export const addGeolocation = async(value:any) => {
+    let oldItem: any = await AsyncStorage.getItem("geolocations")
+    // console.log("OLD GEO -> ", oldItem)
+    if (oldItem != null){
+        oldItem = await JSON.parse(oldItem)
+        await AsyncStorage.setItem("geolocations", JSON.stringify([...oldItem, value]))
+        return
+    }
+    // console.log("FIRST -> ", JSON.stringify([value]))
+    await AsyncStorage.setItem("geolocations", JSON.stringify([value]))
+}
+
+export const getGeolocations = async():Promise<any[] | null> => {
+    let geolocations = await AsyncStorage.getItem("geolocations")
+    return geolocations ? JSON.parse(geolocations) : null
+}
+
+export const clearGeolocation = async() => {
+    console.log("CLEANING GEOLOCATIONS")
+    await AsyncStorage.removeItem("geolocations")
+}
+
 export const setGeolocation = async(value: string) => {
     await AsyncStorage.setItem("geolocation", value)
 }

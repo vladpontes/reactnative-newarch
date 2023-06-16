@@ -9,8 +9,8 @@ import BackgroundService from 'react-native-background-actions';
 // import Geolocation from 'react-native-geolocation-service';
 import Geolocation from '@react-native-community/geolocation'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getGeolocation, setAccessToken, setGeolocation } from './components/services/storage';
-import { insertGeoLoc } from './components/services/api';
+import { getGeolocation, setAccessToken, setGeolocation, addGeolocation, getGeolocations } from './components/services/storage';
+import { insertGeolocation } from './components/services/api';
 import React, { useEffect, useState } from 'react';
 // import { Linking } from 'react-native';
 import { PermissionsAndroid } from 'react-native';
@@ -44,6 +44,7 @@ import {
 import RNAndroidLocationEnabler from 'react-native-android-location-enabler';
 
 import GeolocationRequest from './components/templates/geolocationrequest';
+import { ResponseApi } from './components/models';
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
@@ -74,10 +75,15 @@ Geolocation.setRNConfiguration({
 //   locationProvider: 'auto'
 // })
 
+interface DisplayStatus {
+  string?: string
+  color: string
+}
+
 function Section({children, title}: SectionProps): JSX.Element {
 
-  const [stateGeolocation, setStateGeolocation] = useState({string:'Iniciando rastreamento...',color: 'gray'})
-  const [requestInf, setRequestInfo] = useState('')
+  const [stateGeolocation, setStateGeolocation] = useState<DisplayStatus>({string:'Iniciando rastreamento...',color: 'gray'})
+  // const [requestInf, setRequestInfo] = useState('')
   // const [msg, setMsg] = useState('não tocou..')
 
   useEffect(()=>{
@@ -186,76 +192,92 @@ function Section({children, title}: SectionProps): JSX.Element {
     }
     
     const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time * 1000));
+    
     const StartTask = async () => {
-    await sleep(10);
-    const veryIntensiveTask = async (taskDataArguments: any) => {
-        const { delay } = taskDataArguments;
-        await new Promise( async (resolve) => {
+      // await clearGeolocation()
+      await sleep(5);
+      const veryIntensiveTask = async (taskDataArguments: any) => {
+          const { delay } = taskDataArguments;
+          await new Promise( async (resolve) => {
 
-            for (let i = 0; BackgroundService.isRunning(); i++) {
-              console.log(i);
-              // console.log("BACKGROUND: ", BackgroundService.listeners.toString())
-              // Geolocation.getCurrentPosition(async(info) => {console.log(info)});
-              // await Geolocation.getCurrentPosition(async(info) => {console.log(info); await saveDataGeoLoc(JSON.stringify(info))});
-              // console.log("GET DATA -> ", await getDataGeoLoc())
-              Geolocation.getCurrentPosition(async(info)=>{
-                console.log(info)
-                insertGeoLoc(info, setRequestInfo)
-                setStateGeolocation({string:'Monitoramento GPS ativado', color:'green'})
-                await BackgroundService.updateNotification({taskDesc: `Monitoramento GPS ativado`, color: "green"}); // Only Android, iOS will ignore this call
+              for (let i = 0; BackgroundService.isRunning(); i++) {
+                // console.log(i);
+                // console.log("BACKGROUND: ", BackgroundService.listeners.toString())
+                // Geolocation.getCurrentPosition(async(info) => {console.log(info)});
+                // await Geolocation.getCurrentPosition(async(info) => {console.log(info); await saveDataGeoLoc(JSON.stringify(info))});
+                // console.log("GET DATA -> ", await getDataGeoLoc())
+                Geolocation.getCurrentPosition(async(info)=>{
+                  // console.log(info)
+                  // insertGeoLoc(info, setRequestInfo)
+                  await addGeolocation(info)
 
-              }, async(e: any)=>{
-                if(e?.message){
-                  console.log("OPEN QUESTION!")
-                  setStateGeolocation({string:`Falha ao capturar geolocalização\n${e.message}`, color:'red'})
-                  // await questionLocation()
-                  // await requestLocationPermission()
-                  await BackgroundService.updateNotification({taskDesc: `Falha ao capturar geolocalização\n${e.message}`, color: "red"}); // Only Android, iOS will ignore this call
+                  let geolocations = await getGeolocations()
 
-                  // Geolocation.requestAuthorization(async()=>{console.log("SUCCESS")}, async(e)=>console.log("ERRO: ", e))
-                  // Geolocation.requestAuthorization(async()=>{console.log("SUCCESS")}, async(e)=>console.log("ERRO: ", e))
-                  // getPermission()
-                }
-                console.log(e)
-              }, {timeout: 5000});
+                  // send gelocations
+                  let statusRequest: ResponseApi = await insertGeolocation(geolocations)
+                  if(!statusRequest.status){
+                    await BackgroundService.updateNotification({taskDesc: `Falha ao enviar dados!`, color: "red"}); // Only Android, iOS will ignore this call
+                    setStateGeolocation({string:statusRequest.message, color:'#FE0000'})
+                    return
+                  }else {
+                    await BackgroundService.updateNotification({taskDesc: `Monitoramento GPS ativado`, color: "green"}); // Only Android, iOS will ignore this call
+                    setStateGeolocation({string:'Monitoramento GPS ativado', color:'green'})
+                  }
 
-              await sleep(delay);
 
-            }
-        });
-      };
-  
-      const options = {
-          taskName: 'MandaFrete',
-          taskTitle: 'MandaFrete',
-          taskDesc: 'GeoLocalization Listening...',
-          taskIcon: {
-              name: 'ic_launcher',
-              type: 'mipmap',
-          },
-          color: '#ff00ff',
-          linkingURI: 'geoLocTask://chat/jane', // See Deep Linking for more info
-          parameters: {
-              delay: 10,
-          },
-      };
-      
-      if(!BackgroundService.isRunning()){
-        await BackgroundService.start(veryIntensiveTask, options);
-        await BackgroundService.updateNotification({taskDesc: 'Inicializando monitoramento...', linkingURI:""}); // Only Android, iOS will ignore this call
-        console.log("NÃO ESTÁ RODANDO....")
-      } 
-      // console.log(BackgroundService.)
-      // iOS will also run everything here in the background until .stop() is called
-      // await BackgroundService.stop();
+                }, async(e: any)=>{
+                  if(e?.message){
+                    console.log("OPEN QUESTION!")
+                    // await questionLocation()
+                    // await requestLocationPermission()
+                    let verify = await questionLocation()
+                    if(!verify){
+                      setStateGeolocation({string:`Falha ao capturar geolocalização\n${e.message}`, color:'red'})
+                      await BackgroundService.updateNotification({taskDesc: `Falha ao capturar geolocalização\n${e.message}`, color: "red"}); // Only Android, iOS will ignore this call
+                    }
+                    // Geolocation.requestAuthorization(async()=>{console.log("SUCCESS")}, async(e)=>console.log("ERRO: ", e))
+                    // Geolocation.requestAuthorization(async()=>{console.log("SUCCESS")}, async(e)=>console.log("ERRO: ", e))
+                    // getPermission()
+                  }
+                  console.log(e)
+                }, {timeout: 5000});
+
+                await sleep(delay);
+
+              }
+          });
+        };
+    
+        const options = {
+            taskName: 'MandaFrete',
+            taskTitle: 'MandaFrete',
+            taskDesc: 'GeoLocalization Listening...',
+            taskIcon: {
+                name: 'ic_launcher',
+                type: 'mipmap',
+            },
+            color: '#ff00ff',
+            linkingURI: 'geoLocTask://chat/jane', // See Deep Linking for more info
+            parameters: {
+                delay: 5,
+            },
+        };
+        
+        if(!BackgroundService.isRunning()){
+          await BackgroundService.start(veryIntensiveTask, options);
+          await BackgroundService.updateNotification({taskDesc: 'Inicializando monitoramento...', linkingURI:""}); // Only Android, iOS will ignore this call
+          console.log("NÃO ESTÁ RODANDO....")
+        } 
+        // console.log(BackgroundService.)
+        // iOS will also run everything here in the background until .stop() is called
+        // await BackgroundService.stop();
     }
     
     const preStartTask = async() => {
-      console.log("AQUI")
       let geolocation = await getGeolocation()
       let questionloc = await questionLocation()
-      console.log("GEOLOCATION: ", geolocation)
-      console.log("GEOLOCATIONLOC: ", questionloc)
+      console.log("GEOLOCATION PERMITION STATUS SAVED: ", geolocation)
+      console.log("GEOLOCATIONL PERMITION: ", questionloc)
       if(geolocation){
         StartTask()
       } else {
@@ -297,13 +319,9 @@ function Section({children, title}: SectionProps): JSX.Element {
         {title}
       </Text>
       <Text style={{color:stateGeolocation.color, fontWeight:'bold'}}>
-        {stateGeolocation.string}
+        {stateGeolocation?.string && stateGeolocation?.string}
       </Text>
       {stateGeolocation.color == "red" && <GeolocationRequest/>}
-      <Text>
-        {`\nSTATUS REQUEST: \n`}{requestInf}
-      </Text>
-
       <TouchableOpacity style={styles.button} onPress={()=>  Linking.openSettings()}>
           <Text style={{color:'white', fontWeight: 'bold'}}>
               Configurações do app
