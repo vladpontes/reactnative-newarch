@@ -1,5 +1,5 @@
 import { ResponseApi } from "../models";
-import { clearGeolocation, getAccessToken, getUserSub, setAccessToken } from "./storage";
+import { clearGeolocation, getAccessToken, getUserSub, setAccessToken,getGeolocations } from "./storage";
 
 const graphqlEndPoint = "https://5efkikbzmjd7tnwtyrqiveqgty.appsync-api.us-east-1.amazonaws.com/graphql"
 // const graphqlEndPoint = "https://5efkikbzmjd7tnwtyrqiveqgtyaaaaaaaaaaaaa.appsync-api.us-east-1.amazonaws.com/graphql"
@@ -39,8 +39,9 @@ const requestApi = async(query: any):Promise<ResponseApi> => {
     return res
 }
 
-export const insertGeolocation = async(data: any[] | null): Promise<ResponseApi> => {
+export const insertGeolocation = async(): Promise<ResponseApi> => {
     // console.log("ESTÁ AQUI")
+    let data = await getGeolocations()
     if (data === null || data?.length < 12){return {status:true}}
     // console.log("PASSOU AQUI")
     // if (data.length < 6){
