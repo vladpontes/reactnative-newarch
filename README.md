@@ -11,7 +11,7 @@ Setar variável global antes de rodar: ORG_GRADLE_PROJECT_newArchEnabled=true
 <p>6 - Abra o Genymotio e na barra de ferramentas em Genymotion > Settings > ADB, selecione Use custom "Android SDK tools" e altere para o caminho do android-sdk, exemplo: /usr/lib/android-sdk</p>
 <p>7 - Para rodar o projeto tenha uma vm do Genymotion aberta e na pasta do projeto execute o comando: "npx react-native start", e então tecle "a" para rodar o projeto</p>
 <p>8 - Para confirmar se está rodando na nova arquitetura verifique a seguinte mensagem no console: Running "AppName" with {"fabric":true, "initialProps":null, "rootTag":1}</p>
-
+<p>9 - Este projeto utiliza apenas um pilar da nova arquiteturo react native, caso queira utilizar o segundo pilar em conjunto siga o tutorial do site official neste link: https://reactnative.dev/docs/the-new-architecture/pillars-turbomodules</p>
 
 # Criando APK Release do projeto:
 
