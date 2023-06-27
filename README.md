@@ -1,6 +1,3 @@
-# reactnative-newarch
-Setar variável global antes de rodar: ORG_GRADLE_PROJECT_newArchEnabled=true
-
 # Criando projeto React Native com a nova arquitetura:
 
 <p>1 - Configure o seu Ambiente Linux ou macOS para rodar ReactNative seguindo os passos desse link: https://reactnative.dev/docs/environment-setup</p> 
