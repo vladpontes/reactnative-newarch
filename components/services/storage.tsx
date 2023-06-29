@@ -1,11 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Auth, Amplify } from 'aws-amplify';
-
-Amplify.configure({
-    identityPoolRegion: 'us-east-1',
-    userPoolId: 'us-east-1_nVn05m8GW',
-    userPoolWebClientId: '1pvsr43il36pn4nl1gcuk1q0g3'
-});
+import { AWSConfig } from './aws-config';
+Amplify.configure(AWSConfig);
 
 export const getAccessToken = async() => {
     const accessToken: string | null = await AsyncStorage.getItem("accessToken");

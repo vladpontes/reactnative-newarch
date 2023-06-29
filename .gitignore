@@ -33,7 +33,7 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
-
+components/services/aws-config.tsx
 # node.js
 #
 node_modules/
